@@ -1,14 +1,13 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod app;
 mod display;
+mod settings;
+mod strings;
+mod tray;
 
 fn main() {
-    match display::enumerate_displays() {
-        Ok(displays) => {
-            for display in displays {
-                println!("{}: {} Hz", display.friendly_name, display.current_hz());
-            }
-        }
-        Err(error) => eprintln!("{error}"),
+    if let Err(error) = app::run() {
+        app::show_fatal_error(&error.to_string());
     }
 }
