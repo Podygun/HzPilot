@@ -1,0 +1,86 @@
+name: Bug report
+description: Report a reproducible HzPilot defect
+title: "bug: "
+labels:
+  - bug
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve HzPilot. Do not use this form for security vulnerabilities; follow SECURITY.md instead.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What happened, and what did you expect instead?
+      placeholder: Describe the visible behavior and expected result.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      placeholder: |
+        1. Start HzPilot
+        2. Open the tray menu
+        3. Select ...
+    validations:
+      required: true
+
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      placeholder: Windows 11 24H2, build 26100
+    validations:
+      required: true
+
+  - type: input
+    id: gpu
+    attributes:
+      label: GPU and driver
+      placeholder: Intel UHD Graphics 770, driver 32.0.101.6129
+    validations:
+      required: true
+
+  - type: textarea
+    id: displays
+    attributes:
+      label: Displays and topology
+      description: Include monitor models, connection types, resolution, topology, and current/target rates.
+      placeholder: Two LG FHD monitors, HDMI + DisplayPort, extended, 1920x1080, 74.97 -> 100 Hz
+    validations:
+      required: true
+
+  - type: dropdown
+    id: session
+    attributes:
+      label: Session type
+      options:
+        - Local physical session
+        - Remote Desktop
+        - Virtual machine
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Screenshots, error text, and anything else that may help.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues for duplicates.
+          required: true
+        - label: I only selected a mode offered by HzPilot.
+          required: true
+        - label: This report does not disclose a security vulnerability.
+          required: true
