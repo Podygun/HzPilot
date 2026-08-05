@@ -370,6 +370,10 @@ unsafe extern "system" fn window_proc(
             Err(_) => {
                 if matches!(message, WM_DISPLAYCHANGE | WM_DEVICECHANGE) {
                     state.refresh_pending.set(true);
+                } else if message == WM_DESTROY {
+                    // A modal Win32 call can destroy the window re-entrantly while App is
+                    // borrowed. App::drop will remove the tray icon after the loop exits.
+                    unsafe { PostQuitMessage(0) };
                 }
                 None
             }
