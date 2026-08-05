@@ -1,0 +1,72 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v[0-9]*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        shell: pwsh
+        run: rustup toolchain install stable --profile minimal --component rustfmt,clippy
+
+      - name: Verify source
+        shell: pwsh
+        run: |
+          cargo +stable fmt --check
+          cargo +stable clippy --all-targets --locked -- -D warnings
+          cargo +stable test --locked
+
+      - name: Build executable
+        run: cargo +stable build --release --locked
+
+      - name: Read release version
+        id: version
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart("v")
+          "value=$version" | Add-Content -Path $env:GITHUB_OUTPUT
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup --yes --no-progress
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          $compiler = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          & $compiler "/DMyAppVersion=${{ steps.version.outputs.value }}" "installer\HzPilot.iss"
+
+      - name: Package artifacts
+        shell: pwsh
+        run: |
+          $version = "${{ steps.version.outputs.value }}"
+          New-Item -ItemType Directory -Path "dist\portable" -Force | Out-Null
+          Copy-Item "target\release\hzpilot.exe" "dist\portable\HzPilot.exe"
+          Copy-Item "LICENSE" "dist\portable\LICENSE"
+          Copy-Item "README.md" "dist\portable\README.md"
+          Copy-Item "README.ru.md" "dist\portable\README.ru.md"
+          Compress-Archive -Path "dist\portable\*" -DestinationPath "dist\HzPilot-$version-windows-x64.zip"
+          Copy-Item "installer\output\HzPilot-$version-setup-x64.exe" "dist\"
+          Remove-Item "dist\portable" -Recurse -Force
+          Get-ChildItem "dist" -File | ForEach-Object {
+            $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$hash  $($_.Name)"
+          } | Set-Content "dist\SHA256SUMS.txt"
+
+      - name: Publish GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $files = Get-ChildItem "dist" -File | ForEach-Object { $_.FullName }
+          gh release create "${{ github.ref_name }}" $files --title "HzPilot ${{ github.ref_name }}" --generate-notes

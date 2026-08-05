@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchains
+        shell: pwsh
+        run: |
+          rustup toolchain install stable --profile minimal --component rustfmt,clippy
+          rustup toolchain install 1.85.0 --profile minimal
+
+      - name: Check formatting
+        run: cargo +stable fmt --check
+
+      - name: Run Clippy
+        run: cargo +stable clippy --all-targets --locked -- -D warnings
+
+      - name: Run tests
+        run: cargo +stable test --locked
+
+      - name: Check minimum Rust version
+        run: cargo +1.85.0 check --locked
+
+      - name: Build release executable
+        run: cargo +stable build --release --locked

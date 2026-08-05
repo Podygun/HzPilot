@@ -5,6 +5,7 @@ edition = "2024"
 description = "Lightweight Windows tray utility for switching monitor refresh rates"
 license = "MIT"
 rust-version = "1.85"
+build = "build.rs"
 
 [dependencies]
 windows = { version = "0.62.2", features = [
@@ -21,9 +22,18 @@ windows = { version = "0.62.2", features = [
     "Win32_UI_WindowsAndMessaging",
 ] }
 
+[build-dependencies]
+winresource = { version = "0.1.31", default-features = false }
+
 [profile.release]
 codegen-units = 1
 lto = true
 opt-level = "z"
 panic = "abort"
 strip = "symbols"
+
+[package.metadata.winresource]
+FileDescription = "HzPilot refresh rate switcher"
+ProductName = "HzPilot"
+OriginalFilename = "hzpilot.exe"
+LegalCopyright = "Copyright (c) 2026 HzPilot contributors"

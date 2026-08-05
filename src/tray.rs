@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 use std::mem::size_of;
 
-use windows::Win32::Foundation::{E_FAIL, HWND, LPARAM, POINT, WPARAM};
+use windows::Win32::Foundation::{E_FAIL, HINSTANCE, HWND, LPARAM, POINT, WPARAM};
+use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows::Win32::UI::Shell::{
     NIF_ICON, NIF_INFO, NIF_MESSAGE, NIF_SHOWTIP, NIF_TIP, NIIF_ERROR, NIIF_INFO, NIM_ADD,
     NIM_DELETE, NIM_MODIFY, NIM_SETFOCUS, NIM_SETVERSION, NOTIFY_ICON_INFOTIP_FLAGS,
@@ -33,8 +34,15 @@ pub struct TrayIcon {
 
 impl TrayIcon {
     pub fn new(hwnd: HWND) -> Result<Self> {
-        // SAFETY: IDI_APPLICATION is a predefined shared system icon.
-        let icon = unsafe { LoadIconW(None, IDI_APPLICATION) }?;
+        // SAFETY: a null module name requests this executable. Resource ID 1 is emitted by
+        // winresource; the predefined icon remains a fallback for unusual development builds.
+        let icon = unsafe { GetModuleHandleW(PCWSTR::null()) }
+            .ok()
+            .and_then(|module| unsafe {
+                LoadIconW(Some(HINSTANCE(module.0)), integer_resource(1)).ok()
+            })
+            .map(Ok)
+            .unwrap_or_else(|| unsafe { LoadIconW(None, IDI_APPLICATION) })?;
         Ok(Self {
             hwnd,
             icon,
@@ -402,6 +410,12 @@ fn copy_wide<const SIZE: usize>(buffer: &mut [u16; SIZE], value: &str) {
 
 fn shell_error(message: &str) -> Error {
     Error::new(E_FAIL, message)
+}
+
+// Win32's MAKEINTRESOURCE convention encodes a 16-bit resource ID as a pointer value.
+#[allow(clippy::manual_dangling_ptr)]
+const fn integer_resource(id: u16) -> PCWSTR {
+    PCWSTR::from_raw(id as usize as *const u16)
 }
 
 #[cfg(test)]
