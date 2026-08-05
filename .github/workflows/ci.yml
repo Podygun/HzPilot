@@ -7,9 +7,15 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
+    name: Windows quality gate
     runs-on: windows-latest
+    timeout-minutes: 20
     steps:
       - name: Check out source
         uses: actions/checkout@v4
@@ -27,7 +33,7 @@ jobs:
         run: cargo +stable clippy --all-targets --locked -- -D warnings
 
       - name: Run tests
-        run: cargo +stable test --locked
+        run: cargo +stable test --all-targets --locked
 
       - name: Check minimum Rust version
         run: cargo +1.85.0 check --locked

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and troubleshooting
+    url: https://github.com/Podygun/HzPilot/discussions
+    about: Ask about setup, hardware compatibility, and usage.
+  - name: Security vulnerability
+    url: https://github.com/Podygun/HzPilot/security/advisories/new
+    about: Report security issues privately.

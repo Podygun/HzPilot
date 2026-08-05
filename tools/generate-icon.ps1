@@ -1,5 +1,7 @@
 param(
-    [string]$OutputPath = "$PSScriptRoot\..\assets\hzpilot.ico"
+    [string]$OutputPath = "$PSScriptRoot\..\assets\hzpilot.ico",
+    [string]$PngPath = "$PSScriptRoot\..\assets\hzpilot.png",
+    [string]$SocialPreviewPath = "$PSScriptRoot\..\assets\social-preview.png"
 )
 
 Set-StrictMode -Version Latest
@@ -66,6 +68,9 @@ $frames = @(16, 20, 24, 32, 48, 64, 128, 256) | ForEach-Object {
     New-IconFrame -Size $_
 }
 
+$largeFrame = $frames | Where-Object { $_.Size -eq 256 } | Select-Object -First 1
+[System.IO.File]::WriteAllBytes($PngPath, [byte[]]$largeFrame.Bytes)
+
 $outputDirectory = Split-Path -Parent $OutputPath
 [System.IO.Directory]::CreateDirectory($outputDirectory) | Out-Null
 $file = [System.IO.File]::Create($OutputPath)
@@ -97,4 +102,71 @@ try {
 finally {
     $writer.Dispose()
     $file.Dispose()
+}
+
+$preview = [System.Drawing.Bitmap]::new(
+    1280,
+    640,
+    [System.Drawing.Imaging.PixelFormat]::Format32bppArgb
+)
+$previewGraphics = [System.Drawing.Graphics]::FromImage($preview)
+$iconStream = [System.IO.MemoryStream]::new([byte[]]$largeFrame.Bytes)
+$iconImage = [System.Drawing.Image]::FromStream($iconStream)
+$titleFont = [System.Drawing.Font]::new("Segoe UI Semibold", 86)
+$subtitleFont = [System.Drawing.Font]::new("Segoe UI", 30)
+$metaFont = [System.Drawing.Font]::new("Segoe UI", 20)
+$backgroundBrush = [System.Drawing.SolidBrush]::new(
+    [System.Drawing.Color]::FromArgb(255, 6, 28, 37)
+)
+$titleBrush = [System.Drawing.SolidBrush]::new([System.Drawing.Color]::White)
+$subtitleBrush = [System.Drawing.SolidBrush]::new(
+    [System.Drawing.Color]::FromArgb(255, 190, 221, 227)
+)
+$accentPen = [System.Drawing.Pen]::new(
+    [System.Drawing.Color]::FromArgb(255, 34, 211, 238),
+    5
+)
+
+try {
+    $previewGraphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::HighQuality
+    $previewGraphics.TextRenderingHint = [System.Drawing.Text.TextRenderingHint]::AntiAliasGridFit
+    $previewGraphics.FillRectangle($backgroundBrush, 0, 0, 1280, 640)
+    $previewGraphics.DrawImage($iconImage, 100, 160, 320, 320)
+    $previewGraphics.DrawString("HzPilot", $titleFont, $titleBrush, 500, 150)
+    $previewGraphics.DrawLine($accentPen, 505, 275, 1110, 275)
+    $previewGraphics.DrawString(
+        "Switch monitor refresh rates",
+        $subtitleFont,
+        $subtitleBrush,
+        505,
+        310
+    )
+    $previewGraphics.DrawString(
+        "from the Windows tray.",
+        $subtitleFont,
+        $subtitleBrush,
+        505,
+        355
+    )
+    $previewGraphics.DrawString(
+        "Native Rust + Win32  |  Windows 10/11  |  MIT",
+        $metaFont,
+        $subtitleBrush,
+        505,
+        435
+    )
+    $preview.Save($SocialPreviewPath, [System.Drawing.Imaging.ImageFormat]::Png)
+}
+finally {
+    $accentPen.Dispose()
+    $subtitleBrush.Dispose()
+    $titleBrush.Dispose()
+    $backgroundBrush.Dispose()
+    $metaFont.Dispose()
+    $subtitleFont.Dispose()
+    $titleFont.Dispose()
+    $iconImage.Dispose()
+    $iconStream.Dispose()
+    $previewGraphics.Dispose()
+    $preview.Dispose()
 }
