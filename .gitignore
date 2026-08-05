@@ -1,0 +1,6 @@
+/target/
+/installer/output/
+*.pdb
+*.ilk
+*.user
+.vs/
